@@ -1,0 +1,16 @@
+# Dependencias de Node
+node_modules/
+.pnpm-debug.log
+
+# Archivos de entorno (Secretos de Supabase)
+.env
+.env.local
+
+# Carpetas de compilación
+dist/
+build/
+
+# Configuración de editores y sistema
+.DS_Store
+.vscode/
+.idea/

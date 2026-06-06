@@ -1,0 +1,103 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+enum TaskType {
+  WORK
+  HEALTH
+  PERSONAL
+  ACADEMIC
+}
+
+enum FocusFeedback {
+  DISCIPLINE
+  CONCENTRATION
+}
+
+model User {
+  id              String   @id
+  email           String   @unique
+  scoreGlobal     Float    @default(1.0)
+  scoreDiscipline Float    @default(1.0)
+  scoreMental     Float    @default(1.0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  areas           Area[]
+  tasks           Task[]
+  projects        Project[]
+  habits          Habit[]
+  weeklyCapacities WeeklyCapacity[]
+}
+
+model Area {
+  id     String @id @default(uuid())
+  name   String
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  subareas Subarea[]
+}
+
+model Subarea {
+  id     String @id @default(uuid())
+  name   String
+  areaId String
+  area   Area   @relation(fields: [areaId], references: [id], onDelete: Cascade)
+
+  projects Project[]
+}
+
+model Project {
+  id        String  @id @default(uuid())
+  name      String
+  completed Boolean @default(false)
+  subareaId String
+  subarea   Subarea @relation(fields: [subareaId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tasks Task[]
+}
+
+model Task {
+  id            String         @id @default(uuid())
+  description   String
+  completed     Boolean        @default(false)
+  completedAt   DateTime?
+  type          TaskType
+  focusFeedback FocusFeedback?
+  effortPoints  Int            @default(10)
+  userId        String
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId     String?
+  project       Project?       @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  parentId      String?
+  parent        Task?          @relation("TaskSubtasks", fields: [parentId], references: [id], onDelete: Cascade)
+  subtasks      Task[]         @relation("TaskSubtasks")
+}
+
+model Habit {
+  id        String   @id @default(uuid())
+  name      String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model WeeklyCapacity {
+  id                String @id @default(uuid())
+  weekNumber        Int
+  year              Int
+  totalBudgetPoints Int    @default(100)
+  usedPoints        Int    @default(0)
+  userId            String
+  user              User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([weekNumber, year, userId])
+}
