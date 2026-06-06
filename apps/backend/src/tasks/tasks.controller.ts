@@ -14,7 +14,7 @@ export class TasksController {
     @Body('projectId') projectId?: string,
     @Body('parentId') parentId?: string,
   ) {
-    const userId = 'edu-test-123';
+    const userId = 'eduSancho6';
     return this.tasksService.create(userId, description, type, effortPoints, projectId, parentId);
   }
 
@@ -23,7 +23,7 @@ export class TasksController {
     @Param('id') id: string,
     @Body('feedback') feedback: FocusFeedback,
   ) {
-    const userId = 'edu-test-123';
+    const userId = 'eduSancho6';
     return this.tasksService.complete(id, userId, feedback);
   }
 }

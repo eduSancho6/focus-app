@@ -7,31 +7,31 @@ export class AreasController {
 
   @Get()
   findAll() {
-    const userId = 'edu-test-123';
+    const userId = 'eduSancho6';
     return this.areasService.findAll(userId);
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    const userId = 'edu-test-123';
+    const userId = 'eduSancho6';
     return this.areasService.findOne(id, userId);
   }
 
   @Post()
   create(@Body('name') name: string) {
-    const userId = 'edu-test-123';
+    const userId = 'eduSancho6';
     return this.areasService.create(name, userId);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body('name') name: string) {
-    const userId = 'edu-test-123';
+    const userId = 'eduSancho6';
     return this.areasService.update(id, name, userId);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    const userId = 'edu-test-123';
+    const userId = 'eduSancho6';
     return this.areasService.remove(id, userId);
   }
 }

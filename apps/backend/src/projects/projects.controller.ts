@@ -7,19 +7,19 @@ export class ProjectsController {
 
   @Get()
   findAll() {
-    const userId = 'edu-test-123';
+    const userId = 'eduSancho6';
     return this.projectsService.findAll(userId);
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    const userId = 'edu-test-123';
+    const userId = 'eduSancho6';
     return this.projectsService.findOne(id, userId);
   }
 
   @Post()
   create(@Body('name') name: string, @Body('subareaId') subareaId: string) {
-    const userId = 'edu-test-123';
+    const userId = 'eduSancho6';
     return this.projectsService.create(name, subareaId, userId);
   }
 
@@ -29,13 +29,13 @@ export class ProjectsController {
     @Body('name') name?: string,
     @Body('completed') completed?: boolean,
   ) {
-    const userId = 'edu-test-123';
+    const userId = 'eduSancho6';
     return this.projectsService.update(id, userId, name, completed);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    const userId = 'edu-test-123';
+    const userId = 'eduSancho6';
     return this.projectsService.remove(id, userId);
   }
 }
