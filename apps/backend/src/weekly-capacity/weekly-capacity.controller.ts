@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Patch, Delete, Body, Param, Query } from '@nestjs/common';
 import { WeeklyCapacityService } from './weekly-capacity.service';
+import { CurrentUser } from '../auth/current-user.decorator';
 
 @Controller('weekly-capacity')
 export class WeeklyCapacityController {
@@ -7,10 +8,10 @@ export class WeeklyCapacityController {
 
   @Get()
   findAll(
+    @CurrentUser() userId: string,
     @Query('weekNumber') weekNumber?: string,
     @Query('year') year?: string,
   ) {
-    const userId = 'eduSancho6';
     return this.weeklyCapacityService.findAll(
       userId,
       weekNumber ? parseInt(weekNumber, 10) : undefined,
@@ -19,34 +20,32 @@ export class WeeklyCapacityController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    const userId = 'eduSancho6';
+  findOne(@Param('id') id: string, @CurrentUser() userId: string) {
     return this.weeklyCapacityService.findOne(id, userId);
   }
 
   @Post()
   create(
+    @CurrentUser() userId: string,
     @Body('weekNumber') weekNumber: number,
     @Body('year') year: number,
     @Body('totalBudgetPoints') totalBudgetPoints?: number,
   ) {
-    const userId = 'eduSancho6';
     return this.weeklyCapacityService.create(userId, weekNumber, year, totalBudgetPoints);
   }
 
   @Patch(':id')
   update(
     @Param('id') id: string,
+    @CurrentUser() userId: string,
     @Body('totalBudgetPoints') totalBudgetPoints?: number,
     @Body('usedPoints') usedPoints?: number,
   ) {
-    const userId = 'eduSancho6';
     return this.weeklyCapacityService.update(id, userId, totalBudgetPoints, usedPoints);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    const userId = 'eduSancho6';
+  remove(@Param('id') id: string, @CurrentUser() userId: string) {
     return this.weeklyCapacityService.remove(id, userId);
   }
 }

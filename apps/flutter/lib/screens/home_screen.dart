@@ -1,18 +1,21 @@
 import 'package:flutter/material.dart';
+import '../services/auth_service.dart';
 import '../services/api_service.dart';
 import 'tasks_screen.dart';
 import 'areas_screen.dart';
 import 'habits_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final AuthService auth;
+
+  const HomeScreen({super.key, required this.auth});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final ApiService _api = ApiService();
+  late final ApiService _api;
   int _selectedIndex = 0;
   bool _serverAlive = false;
   bool _checking = true;
@@ -20,22 +23,29 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    _api = ApiService(getToken: () => widget.auth.accessToken ?? '');
     _checkServer();
   }
 
   Future<void> _checkServer() async {
     try {
-      await _api.getList('/areas');
-      setState(() {
-        _serverAlive = true;
-        _checking = false;
-      });
-    } catch (e) {
-      setState(() {
-        _serverAlive = false;
-        _checking = false;
-      });
+      await _api.getAreas();
+      setState(() { _serverAlive = true; _checking = false; });
+    } catch (_) {
+      setState(() { _serverAlive = false; _checking = false; });
     }
+  }
+
+  Future<void> _signOut() async {
+    await widget.auth.signOut();
+  }
+
+  bool _handleAuthError(dynamic error) {
+    if (error.toString().contains('401')) {
+      widget.auth.signOut();
+      return true;
+    }
+    return false;
   }
 
   @override
@@ -54,9 +64,12 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 16),
               const Text('Server not reachable', style: TextStyle(fontSize: 18)),
               const SizedBox(height: 8),
-              const Text('Start the backend with: npm run start:dev\n\nAPI URL: http://10.0.2.2:3000'),
+              const Text('Start the backend with: npm run start:dev'),
               const SizedBox(height: 24),
-              ElevatedButton(onPressed: () { setState(() => _checking = true); _checkServer(); }, child: const Text('Retry')),
+              ElevatedButton(
+                onPressed: () { setState(() => _checking = true); _checkServer(); },
+                child: const Text('Retry'),
+              ),
             ],
           ),
         ),
@@ -70,7 +83,12 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Focus App')),
+      appBar: AppBar(
+        title: const Text('Focus App'),
+        actions: [
+          IconButton(icon: const Icon(Icons.logout), onPressed: _signOut, tooltip: 'Sign Out'),
+        ],
+      ),
       body: screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,

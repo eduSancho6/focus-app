@@ -1,10 +1,30 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { TaskType, FocusFeedback } from '../../generated/prisma';
+import { TaskType, FocusFeedback } from '@prisma/client';
 
 @Injectable()
 export class TasksService {
   constructor(private prisma: PrismaService) {}
+
+  async findAll(userId: string) {
+    return this.prisma.task.findMany({
+      where: { userId },
+      include: { subtasks: true },
+    });
+  }
+
+  async findOne(id: string, userId: string) {
+    const task = await this.prisma.task.findFirst({
+      where: { id, userId },
+      include: { subtasks: true },
+    });
+
+    if (!task) {
+      throw new NotFoundException('Task not found');
+    }
+
+    return task;
+  }
 
   async create(
     userId: string,

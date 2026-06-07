@@ -1,4 +1,4 @@
-import { PrismaClient, TaskType, FocusFeedback } from '../generated/prisma';
+import { PrismaClient, TaskType, FocusFeedback } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import 'dotenv/config';
