@@ -40,7 +40,9 @@ model Area {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  subareas Subarea[]
+  subareas     Subarea[]
+  areaBudgets  AreaBudget[]
+  tasks        Task[]
 }
 
 model Subarea {
@@ -76,6 +78,8 @@ model Task {
   user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   projectId     String?
   project       Project?       @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  areaId        String?
+  area          Area?          @relation(fields: [areaId], references: [id], onDelete: SetNull)
   parentId      String?
   parent        Task?          @relation("TaskSubtasks", fields: [parentId], references: [id], onDelete: Cascade)
   subtasks      Task[]         @relation("TaskSubtasks")
@@ -94,9 +98,22 @@ model WeeklyCapacity {
   weekNumber        Int
   year              Int
   totalBudgetPoints Int    @default(100)
-  usedPoints        Int    @default(0)
   userId            String
   user              User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  areaBudgets AreaBudget[]
+
   @@unique([weekNumber, year, userId])
+}
+
+model AreaBudget {
+  id               String @id @default(uuid())
+  allocatedPoints  Int
+  usedPoints       Int    @default(0)
+  areaId           String
+  area             Area   @relation(fields: [areaId], references: [id], onDelete: Cascade)
+  weeklyCapacityId String
+  weeklyCapacity   WeeklyCapacity @relation(fields: [weeklyCapacityId], references: [id], onDelete: Cascade)
+
+  @@unique([areaId, weeklyCapacityId])
 }

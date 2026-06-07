@@ -1,6 +1,16 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { TaskType, FocusFeedback } from '@prisma/client';
+
+function getCurrentISOWeek(): { weekNumber: number; year: number } {
+  const now = new Date();
+  const temp = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+  const dayNum = temp.getUTCDay() || 7;
+  temp.setUTCDate(temp.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(temp.getUTCFullYear(), 0, 1));
+  const weekNumber = Math.ceil(((temp.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+  return { weekNumber, year: temp.getUTCFullYear() };
+}
 
 @Injectable()
 export class TasksService {
@@ -33,15 +43,78 @@ export class TasksService {
     effortPoints?: number,
     projectId?: string,
     parentId?: string,
+    areaId?: string,
   ) {
+    const finalEffortPoints = effortPoints ?? 10;
+
+    let resolvedAreaId: string | null = null;
+    if (areaId) {
+      resolvedAreaId = areaId;
+    } else if (projectId) {
+      const project = await this.prisma.project.findUnique({
+        where: { id: projectId },
+        include: { subarea: { select: { areaId: true } } },
+      });
+      resolvedAreaId = project?.subarea?.areaId ?? null;
+    }
+
+    if (resolvedAreaId && finalEffortPoints > 0) {
+      const { weekNumber, year } = getCurrentISOWeek();
+
+      const weeklyCapacity = await this.prisma.weeklyCapacity.findUnique({
+        where: {
+          weekNumber_year_userId: { weekNumber, year, userId },
+        },
+      });
+
+      if (weeklyCapacity) {
+        const areaBudget = await this.prisma.areaBudget.findUnique({
+          where: {
+            areaId_weeklyCapacityId: {
+              areaId: resolvedAreaId,
+              weeklyCapacityId: weeklyCapacity.id,
+            },
+          },
+        });
+
+        if (areaBudget) {
+          if (areaBudget.usedPoints + finalEffortPoints > areaBudget.allocatedPoints) {
+            throw new BadRequestException(
+              'Energy capacity exceeded for this Area. Consider reallocating your weekly points or postponing this task.',
+            );
+          }
+
+          return this.prisma.$transaction(async (tx) => {
+            await tx.areaBudget.update({
+              where: { id: areaBudget.id },
+              data: { usedPoints: { increment: finalEffortPoints } },
+            });
+
+            return tx.task.create({
+              data: {
+                description,
+                type,
+                effortPoints: finalEffortPoints,
+                userId,
+                projectId,
+                parentId,
+                areaId: resolvedAreaId,
+              },
+            });
+          });
+        }
+      }
+    }
+
     return this.prisma.task.create({
       data: {
         description,
         type,
-        effortPoints: effortPoints ?? 10,
+        effortPoints: finalEffortPoints,
         userId,
         projectId,
         parentId,
+        areaId: resolvedAreaId ?? undefined,
       },
     });
   }

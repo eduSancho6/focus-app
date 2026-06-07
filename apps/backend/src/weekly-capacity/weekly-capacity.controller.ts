@@ -39,9 +39,8 @@ export class WeeklyCapacityController {
     @Param('id') id: string,
     @CurrentUser() userId: string,
     @Body('totalBudgetPoints') totalBudgetPoints?: number,
-    @Body('usedPoints') usedPoints?: number,
   ) {
-    return this.weeklyCapacityService.update(id, userId, totalBudgetPoints, usedPoints);
+    return this.weeklyCapacityService.update(id, userId, totalBudgetPoints);
   }
 
   @Delete(':id')

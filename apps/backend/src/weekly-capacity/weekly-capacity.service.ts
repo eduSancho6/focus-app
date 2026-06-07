@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -49,7 +49,6 @@ export class WeeklyCapacityService {
     id: string,
     userId: string,
     totalBudgetPoints?: number,
-    usedPoints?: number,
   ) {
     const capacity = await this.prisma.weeklyCapacity.findFirst({
       where: { id, userId },
@@ -59,9 +58,8 @@ export class WeeklyCapacityService {
       throw new NotFoundException('Weekly capacity not found');
     }
 
-    const data: { totalBudgetPoints?: number; usedPoints?: number } = {};
+    const data: { totalBudgetPoints?: number } = {};
     if (totalBudgetPoints !== undefined) data.totalBudgetPoints = totalBudgetPoints;
-    if (usedPoints !== undefined) data.usedPoints = usedPoints;
 
     return this.prisma.weeklyCapacity.update({
       where: { id },
@@ -80,6 +78,61 @@ export class WeeklyCapacityService {
 
     return this.prisma.weeklyCapacity.delete({
       where: { id },
+    });
+  }
+
+  async initializeWeeklyBudget(
+    userId: string,
+    weekNumber: number,
+    year: number,
+    totalBudgetPoints: number,
+    allocations: { areaId: string; allocatedPoints: number }[],
+  ) {
+    const totalAllocated = allocations.reduce((sum, a) => sum + a.allocatedPoints, 0);
+    if (totalAllocated > totalBudgetPoints) {
+      throw new BadRequestException('Allocated points exceed total weekly budget');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const weeklyCapacity = await tx.weeklyCapacity.upsert({
+        where: {
+          weekNumber_year_userId: { weekNumber, year, userId },
+        },
+        create: {
+          weekNumber,
+          year,
+          totalBudgetPoints,
+          userId,
+        },
+        update: {
+          totalBudgetPoints,
+        },
+      });
+
+      const areaBudgets: { areaId: string; allocatedPoints: number; usedPoints: number; id: string; weeklyCapacityId: string }[] = [];
+      for (const allocation of allocations) {
+        const ab = await tx.areaBudget.upsert({
+          where: {
+            areaId_weeklyCapacityId: {
+              areaId: allocation.areaId,
+              weeklyCapacityId: weeklyCapacity.id,
+            },
+          },
+          create: {
+            allocatedPoints: allocation.allocatedPoints,
+            usedPoints: 0,
+            areaId: allocation.areaId,
+            weeklyCapacityId: weeklyCapacity.id,
+          },
+          update: {
+            allocatedPoints: allocation.allocatedPoints,
+            usedPoints: 0,
+          },
+        });
+        areaBudgets.push(ab);
+      }
+
+      return { weeklyCapacity, areaBudgets };
     });
   }
 }

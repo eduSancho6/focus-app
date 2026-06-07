@@ -25,8 +25,9 @@ export class TasksController {
     @Body('effortPoints') effortPoints?: number,
     @Body('projectId') projectId?: string,
     @Body('parentId') parentId?: string,
+    @Body('areaId') areaId?: string,
   ) {
-    return this.tasksService.create(userId, description, type, effortPoints, projectId, parentId);
+    return this.tasksService.create(userId, description, type, effortPoints, projectId, parentId, areaId);
   }
 
   @Post(':id/complete')
